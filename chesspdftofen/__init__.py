@@ -158,6 +158,7 @@ def run(file_path,
 
       yield 'Converting %s ...' % (file_path,)
       num_pages = len(im_paths)
+      print(num_pages)
       
       for i, im_path in enumerate(im_paths):
         if i % num_pages_to_print == 0:
@@ -188,8 +189,9 @@ def run(file_path,
 
           outputs = net(images)
           _, predicted = torch.max(outputs.data, 1)
-          
+          print(predicted)
           fen_str  = get_fen_str(predicted)
+          print(fen_str)
 
           if not build_training_set:
             annotation1, annotation2 = create_annotation(xmax / page_im_w * pdf_w, (1 - ymin / page_im_h) * pdf_h, {

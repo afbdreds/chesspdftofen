@@ -43,40 +43,46 @@ def draw_centers(potential_board, centers):
   sw(cdstP)
 
 def get_contours(th2):
-  # get contours that are square and reach minimum area
-  contours, hierarchy = cv2.findContours(th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-  # contours, hierarchy = cv2.findContours(th2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-   
-  contours.sort(key=lambda cnt: cv2.contourArea(cnt), reverse=True)
-  filtered_contours = []
-  filtered_rects = []
-  buf = 0
-  min_area = 64*25*25
-  h_max, w_max = th2.shape
+    # Obtenha os contornos e a hierarquia
+    contours, hierarchy = cv2.findContours(th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-  for i, cnt in enumerate(contours):
-    area = cv2.contourArea(cnt)
-    if not (min_area <= area):
-      # print('area', area)
-      continue
-    epsilon = 0.01*cv2.arcLength(cnt,True)
-    approx = cv2.approxPolyDP(cnt,epsilon,True)
-    num_sides = len(approx)
-    # check for square
-    if not (4 == num_sides):
-      # print('sides', num_sides)
-      continue
-    x, y, w, h = cv2.boundingRect(cnt)
-    if abs(w - h) > 25:
-      # print('x,y,w,h', x, y, w, h)
-      continue
+    # Verifique se 'contours' é uma lista
+    if not isinstance(contours, list):
+        contours = list(contours)
     
-    rect = [max(y - buf, 0), min(y + h + buf, h_max), 
-      max(x - buf, 0), min(x + w + buf, w_max),
-      w, h]
-    filtered_contours.append(cnt)
-    filtered_rects.append(rect)
-  return filtered_contours, filtered_rects
+    # Ordenar os contornos com base na área
+    contours.sort(key=lambda cnt: cv2.contourArea(cnt), reverse=True)
+    
+    filtered_contours = []
+    filtered_rects = []
+    buf = 0
+    min_area = 64 * 25 * 25
+    h_max, w_max = th2.shape
+
+    for i, cnt in enumerate(contours):
+        area = cv2.contourArea(cnt)
+        if area < min_area:
+            continue
+        
+        epsilon = 0.01 * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        num_sides = len(approx)
+        
+        # Verifique se o contorno é um quadrado
+        if num_sides != 4:
+            continue
+        
+        x, y, w, h = cv2.boundingRect(cnt)
+        if abs(w - h) > 25:
+            continue
+        
+        rect = [max(y - buf, 0), min(y + h + buf, h_max), 
+                max(x - buf, 0), min(x + w + buf, w_max),
+                w, h]
+        filtered_contours.append(cnt)
+        filtered_rects.append(rect)
+    
+    return filtered_contours, filtered_rects
 
 def get_edges(pb_th2):
   lap = cv2.Laplacian(pb_th2, cv2.CV_64F)
@@ -200,7 +206,7 @@ def segment_boards(im):
     matching_points = get_matching_points(centers, dim)
 
     # print('segment_boards matching_points', matching_points)
-    if matching_points > 0.7 * 81:
+    if matching_points > 0.2 * 81:
       # min_centers = centers.min(axis=0).astype(np.int32)
       # max_centers = centers.max(axis=0).astype(np.int32)
       # # get the bounding box of centers
